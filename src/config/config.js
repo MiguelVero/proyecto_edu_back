@@ -1,20 +1,23 @@
 const dotenv = require('dotenv');
 const path = require('path');
 
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Solo cargar .env en desarrollo local
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config({ path: path.join(__dirname, '../../.env') });
+}
 
 module.exports = {
     // App
     nodeEnv: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT) || 3000,
     
-    // Database
+    // Database - Soporta tanto variables locales como de Railway
     db: {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT) || 3306,
-        name: process.env.DB_NAME || 'labtrack_db',
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
+        host: process.env.DB_HOST || process.env.MYSQLHOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || process.env.MYSQLPORT) || 3306,
+        name: process.env.DB_NAME || process.env.MYSQLDATABASE || 'labtrack_db',
+        user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
+        password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
         dialect: 'mysql',
         pool: {
             max: 5,
@@ -33,11 +36,11 @@ module.exports = {
     
     // Uploads
     uploadDir: process.env.UPLOAD_DIR || 'uploads',
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024,
     
     // Rate limiting
     rateLimit: {
-        windowMs: 15 * 60 * 1000, // 15 minutos
-        max: 100 // límite por IP
+        windowMs: 15 * 60 * 1000,
+        max: 100
     }
 };
