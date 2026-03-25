@@ -6,12 +6,19 @@ if (process.env.NODE_ENV !== 'production') {
     dotenv.config({ path: path.join(__dirname, '../../.env') });
 }
 
+// Log de variables para debug (solo en desarrollo o con flag)
+if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development') {
+    console.log('🔧 Configuración de base de datos:');
+    console.log(`   Host: ${process.env.DB_HOST || process.env.MYSQLHOST || 'localhost'}`);
+    console.log(`   Port: ${process.env.DB_PORT || process.env.MYSQLPORT || 3306}`);
+    console.log(`   Name: ${process.env.DB_NAME || process.env.MYSQLDATABASE || 'labtrack_db'}`);
+    console.log(`   User: ${process.env.DB_USER || process.env.MYSQLUSER || 'root'}`);
+}
+
 module.exports = {
-    // App
     nodeEnv: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT) || 3000,
     
-    // Database - Soporta tanto variables locales como de Railway
     db: {
         host: process.env.DB_HOST || process.env.MYSQLHOST || 'localhost',
         port: parseInt(process.env.DB_PORT || process.env.MYSQLPORT) || 3306,
@@ -27,18 +34,11 @@ module.exports = {
         }
     },
     
-    // JWT
     jwtSecret: process.env.JWT_SECRET || 'dev_secret_key',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    
-    // Frontend
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
-    
-    // Uploads
     uploadDir: process.env.UPLOAD_DIR || 'uploads',
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024,
-    
-    // Rate limiting
     rateLimit: {
         windowMs: 15 * 60 * 1000,
         max: 100

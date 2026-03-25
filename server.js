@@ -6,39 +6,39 @@ const logger = require('./src/utils/logger');
 
 const PORT = config.port || 3000;
 
-// Verificar que la zona horaria se configuró correctamente
-logger.info(`🕐 Zona horaria configurada: ${process.env.TZ}`);
-logger.info(`🕐 Hora actual del servidor: ${new Date().toLocaleString('es-PE')}`);
+// Logs simples para Railway (funcionan siempre)
+console.log(`🕐 Zona horaria configurada: ${process.env.TZ}`);
+console.log(`🕐 Hora actual del servidor: ${new Date().toLocaleString('es-PE')}`);
+console.log(`📝 Entorno: ${config.nodeEnv}`);
+console.log(`🔧 Configuración DB: ${config.db.host}:${config.db.port}/${config.db.name}`);
 
 
 // Verificar conexión a la base de datos
 async function initializeDatabase() {
     try {
         await sequelize.authenticate();
-        logger.info('Conexión a la base de datos establecida correctamente.');
+        console.log('✅ Conexión a la base de datos establecida correctamente.');
 
-        // Configurar la zona horaria de la conexión MySQL
         await sequelize.query("SET time_zone = '-05:00'");
-        logger.info('🕐 Zona horaria MySQL configurada a Perú (UTC-5)');
+        console.log('🕐 Zona horaria MySQL configurada a Perú (UTC-5)');
         
-       // Sincronizar modelos (solo en desarrollo)
         if (config.nodeEnv === 'development') {
-            // Cambiar a false para evitar que intente recrear índices
             await sequelize.sync({ alter: false });
-            logger.info('Modelos verificados con la base de datos.');
+            console.log('📊 Modelos verificados con la base de datos.');
         }
     } catch (error) {
-        logger.error('Error conectando a la base de datos:', error);
+        console.error('❌ Error conectando a la base de datos:', error.message);
         process.exit(1);
     }
 }
+
 
 // Iniciar servidor
 async function startServer() {
     await initializeDatabase();
     
     const server = app.listen(PORT, () => {
-        logger.info(`
+        console.log(`
         =====================================
         🚀 Servidor corriendo en puerto: ${PORT}
         📝 Entorno: ${config.nodeEnv}
@@ -48,11 +48,10 @@ async function startServer() {
         `);
     });
 
-    // Manejo de cierre graceful
     process.on('SIGTERM', () => {
-        logger.info('SIGTERM recibido. Cerrando servidor...');
+        console.log('SIGTERM recibido. Cerrando servidor...');
         server.close(() => {
-            logger.info('Servidor cerrado.');
+            console.log('Servidor cerrado.');
             sequelize.close();
         });
     });
