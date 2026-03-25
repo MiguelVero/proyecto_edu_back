@@ -95,6 +95,12 @@ app.use(morgan('combined', { stream: { write: message => logger.info(message.tri
 // Archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Archivos estáticos
+const uploadPath = path.join(__dirname, '../uploads');
+console.log('📁 Sirviendo archivos estáticos desde:', uploadPath);
+app.use('/uploads', express.static(uploadPath));
+
+
 // ============================================
 // 3. RUTAS PÚBLICAS
 // ============================================
