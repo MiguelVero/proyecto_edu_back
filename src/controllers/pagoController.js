@@ -92,6 +92,7 @@ const obtenerPagosPorOrden = async (req, res) => {
     }
 };
 
+// En pagoController.js, modifica eliminarPago
 const eliminarPago = async (req, res) => {
     try {
         const { id } = req.params;
@@ -101,7 +102,35 @@ const eliminarPago = async (req, res) => {
             return res.status(404).json({ error: 'Pago no encontrado' });
         }
 
+        const ordenId = pago.orden_id;
+        
+        // Eliminar el pago
         await pago.destroy();
+
+        // Recalcular el total pagado de la orden
+        const pagosRestantes = await Pago.findAll({
+            where: { orden_id: ordenId },
+            attributes: [[sequelize.fn('SUM', sequelize.col('monto')), 'total']]
+        });
+        
+        const totalPagado = parseFloat(pagosRestantes[0]?.dataValues?.total || 0);
+        
+        // Obtener la orden
+        const orden = await Orden.findByPk(ordenId);
+        
+        if (orden) {
+            // Determinar nuevo estado
+            let nuevoEstado = 'pendiente';
+            if (totalPagado >= parseFloat(orden.total)) {
+                nuevoEstado = 'terminado';
+            }
+            
+            // Actualizar si cambió
+            if (orden.estado !== nuevoEstado) {
+                await orden.update({ estado: nuevoEstado });
+                logger.info(`Orden ${ordenId} actualizada a estado: ${nuevoEstado} después de eliminar pago`);
+            }
+        }
 
         logger.info(`Pago eliminado - ID: ${id}`);
 
