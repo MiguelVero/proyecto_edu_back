@@ -4,7 +4,6 @@ const logger = require('../utils/logger');
 const obtenerOrdenes = async (req, res) => {
     try {
         const ordenes = await Orden.findAll({
-            where: { activo: true },
             include: [
                 { 
                     model: Doctor, 
@@ -42,7 +41,7 @@ const crearOrden = async (req, res) => {
             total: req.body.total,
             prioridad: req.body.prioridad || 'normal',
             fecha_limite: req.body.fecha_limite || null,
-            hora_limite: req.body.hora_limite || null, // <-- NUEVO
+            hora_limite: req.body.hora_limite || null,
             cliente_nombre: req.body.cliente_nombre || null,
             usuario_creo_id: req.usuario.id,
             id_externo: `ORD-${Date.now()}`
@@ -50,7 +49,6 @@ const crearOrden = async (req, res) => {
 
         const orden = await Orden.create(ordenData, { transaction });
 
-        // Si hay pago inicial
         if (req.body.pago_inicial && req.body.pago_inicial > 0) {
             await Pago.create({
                 orden_id: orden.id,
@@ -92,7 +90,7 @@ const actualizarOrden = async (req, res) => {
             total: req.body.total,
             prioridad: req.body.prioridad,
             fecha_limite: req.body.fecha_limite || null,
-            hora_limite: req.body.hora_limite || null, // <-- NUEVO
+            hora_limite: req.body.hora_limite || null,
             cliente_nombre: req.body.cliente_nombre
         };
 
@@ -112,16 +110,22 @@ const actualizarOrden = async (req, res) => {
 const eliminarOrden = async (req, res) => {
     try {
         const { id } = req.params;
+        
         const orden = await Orden.findByPk(id);
 
         if (!orden) {
             return res.status(404).json({ error: 'Orden no encontrada' });
         }
 
-        // Soft delete
-        await orden.update({ activo: false });
+        // Eliminar los pagos asociados primero
+        await Pago.destroy({ 
+            where: { orden_id: id } 
+        });
+        
+        // Eliminar la orden físicamente
+        await orden.destroy();
 
-        logger.info(`Orden eliminada - ID: ${id}`);
+        logger.info(`Orden eliminada físicamente - ID: ${id}, Externa: ${orden.id_externo}`);
 
         res.json({
             mensaje: 'Orden eliminada correctamente'
@@ -133,78 +137,63 @@ const eliminarOrden = async (req, res) => {
     }
 };
 
-
-// En obtenerEstadisticas, cambiar la condición
 const obtenerEstadisticas = async (req, res) => {
     try {
-        const stats = await sequelize.query(
-            'SELECT * FROM vista_dashboard_metricas',
-            { type: sequelize.QueryTypes.SELECT }
-        );
-
-        if (!stats || stats.length === 0) {
-            const ordenesActivas = await Orden.count({
-                where: { estado: 'pendiente', activo: true }
-            });
-            
-            // CAMBIADO: fecha_limite <= CURDATE()
-            const ordenesVencidas = await sequelize.query(`
-                SELECT COUNT(*) as total FROM ordenes o
-                WHERE o.activo = 1 
-                  AND o.estado = 'pendiente' 
-                  AND o.fecha_limite <= CURDATE()
-                  AND (o.total - COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.orden_id = o.id), 0)) > 0
-            `, { type: sequelize.QueryTypes.SELECT });
-            
-            const ordenesTerminadas = await Orden.count({
-                where: { estado: 'terminado' }
-            });
-            
-            const cajaHoy = await Pago.sum('monto', {
-                where: {
-                    creado_en: {
-                        [Op.gte]: new Date().setHours(0, 0, 0),
-                        [Op.lte]: new Date().setHours(23, 59, 59)
-                    }
+        const ordenesActivas = await Orden.count({
+            where: { estado: 'pendiente' }
+        });
+        
+        const ordenesVencidas = await sequelize.query(`
+            SELECT COUNT(*) as total FROM ordenes o
+            WHERE o.estado = 'pendiente' 
+              AND o.fecha_limite <= CURDATE()
+              AND (o.total - COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.orden_id = o.id), 0)) > 0
+        `, { type: sequelize.QueryTypes.SELECT });
+        
+        const ordenesTerminadas = await Orden.count({
+            where: { estado: 'terminado' }
+        });
+        
+        const cajaHoy = await Pago.sum('monto', {
+            where: {
+                creado_en: {
+                    [Op.gte]: new Date(new Date().setHours(0, 0, 0)),
+                    [Op.lte]: new Date(new Date().setHours(23, 59, 59))
                 }
-            }) || 0;
-            
-            const inicioSemana = new Date();
-            inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
-            inicioSemana.setHours(0, 0, 0);
-            
-            const cajaSemana = await Pago.sum('monto', {
-                where: {
-                    creado_en: {
-                        [Op.gte]: inicioSemana
-                    }
+            }
+        }) || 0;
+        
+        const inicioSemana = new Date();
+        inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
+        inicioSemana.setHours(0, 0, 0);
+        
+        const cajaSemana = await Pago.sum('monto', {
+            where: {
+                creado_en: {
+                    [Op.gte]: inicioSemana
                 }
-            }) || 0;
-            
-            res.json({
-                ordenes_activas: ordenesActivas,
-                ordenes_vencidas: ordenesVencidas[0]?.total || 0,
-                ordenes_terminadas: ordenesTerminadas,
-                caja_hoy: cajaHoy,
-                caja_semana: cajaSemana
-            });
-        } else {
-            res.json(stats[0]);
-        }
+            }
+        }) || 0;
+        
+        res.json({
+            ordenes_activas: ordenesActivas,
+            ordenes_vencidas: ordenesVencidas[0]?.total || 0,
+            ordenes_terminadas: ordenesTerminadas,
+            caja_hoy: cajaHoy,
+            caja_semana: cajaSemana
+        });
     } catch (error) {
         logger.error('Error obteniendo estadísticas:', error);
         res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
 };
+
 const obtenerOrdenPorId = async (req, res) => {
     try {
         const { id } = req.params;
         
         const orden = await Orden.findOne({
-            where: { 
-                id: id,
-                activo: true 
-            },
+            where: { id: id },
             include: [
                 { 
                     model: Doctor, 
@@ -235,9 +224,9 @@ const obtenerOrdenPorId = async (req, res) => {
         res.status(500).json({ error: 'Error al obtener la orden' });
     }
 };
+
 const obtenerIngresosMensuales = async (req, res) => {
     try {
-        // Obtener ingresos de los últimos 6 meses
         const ingresos = await sequelize.query(`
             SELECT 
                 DATE_FORMAT(creado_en, '%Y-%m') as mes,
@@ -250,10 +239,8 @@ const obtenerIngresosMensuales = async (req, res) => {
             ORDER BY año ASC, mes_numero ASC
         `, { type: sequelize.QueryTypes.SELECT });
 
-        // Nombres de meses en español
         const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         
-        // Crear array con los últimos 6 meses (incluyendo meses sin datos)
         const resultado = [];
         const hoy = new Date();
         
@@ -285,15 +272,10 @@ const obtenerFechaServidor = (req, res) => {
     const dia = String(ahora.getDate()).padStart(2, '0');
     res.json({ fecha: `${anio}-${mes}-${dia}` });
 };
-// Luego, en ordenRoutes.js, agrega la ruta: router.get('/server-time', autenticar, obtenerFechaServidor);
-
-
-
-
 
 module.exports = {
     obtenerOrdenes,
-    obtenerOrdenPorId,  // <-- AGREGAR ESTA LÍNEA
+    obtenerOrdenPorId,
     crearOrden,
     actualizarOrden,
     eliminarOrden,

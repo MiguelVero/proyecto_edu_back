@@ -10,7 +10,7 @@ const Orden = sequelize.define('Orden', {
     id_externo: {
         type: DataTypes.STRING(50)
     },
-    doctor_id: {  // Agregar explícitamente
+    doctor_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
@@ -18,7 +18,7 @@ const Orden = sequelize.define('Orden', {
             key: 'id'
         }
     },
-    servicio_id: {  // Agregar explícitamente
+    servicio_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
@@ -26,7 +26,7 @@ const Orden = sequelize.define('Orden', {
             key: 'id'
         }
     },
-    usuario_creo_id: {  // Agregar explícitamente
+    usuario_creo_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
@@ -67,10 +67,6 @@ const Orden = sequelize.define('Orden', {
     },
     cliente_nombre: {
         type: DataTypes.TEXT
-    },
-    activo: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
     }
 }, {
     tableName: 'ordenes',
