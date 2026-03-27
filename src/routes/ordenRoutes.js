@@ -7,7 +7,8 @@ const {
     actualizarOrden, 
     eliminarOrden,
     obtenerEstadisticas,
-    obtenerIngresosMensuales 
+    obtenerIngresosMensuales,
+    obtenerFechaServidor
 } = require('../controllers/ordenController');
 const { autenticar, autorizar } = require('../middleware/auth');
 const { validarOrden } = require('../middleware/validator');
@@ -19,5 +20,5 @@ router.get('/:id', autenticar, obtenerOrdenPorId);  // <-- AGREGAR ESTA RUTA
 router.post('/', autenticar, validarOrden, crearOrden);
 router.put('/:id', autenticar, actualizarOrden);
 router.delete('/:id', autenticar, autorizar('admin'), eliminarOrden);
-
+router.get('/server-time', autenticar, obtenerFechaServidor);
 module.exports = router;

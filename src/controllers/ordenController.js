@@ -277,6 +277,20 @@ const obtenerIngresosMensuales = async (req, res) => {
         res.status(500).json({ error: 'Error al obtener ingresos mensuales' });
     }
 };
+
+const obtenerFechaServidor = (req, res) => {
+    const ahora = new Date();
+    const anio = ahora.getFullYear();
+    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    res.json({ fecha: `${anio}-${mes}-${dia}` });
+};
+// Luego, en ordenRoutes.js, agrega la ruta: router.get('/server-time', autenticar, obtenerFechaServidor);
+
+
+
+
+
 module.exports = {
     obtenerOrdenes,
     obtenerOrdenPorId,  // <-- AGREGAR ESTA LÍNEA
@@ -284,5 +298,6 @@ module.exports = {
     actualizarOrden,
     eliminarOrden,
     obtenerEstadisticas,
-    obtenerIngresosMensuales
+    obtenerIngresosMensuales,
+    obtenerFechaServidor
 };
