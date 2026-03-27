@@ -112,7 +112,7 @@ const getReporteDoctores = async (req, res) => {
                 AVG(o.total) as promedio_por_orden,
                 MAX(o.fecha_limite) as proxima_entrega
             FROM doctores d
-            LEFT JOIN ordenes o ON d.id = o.doctor_id AND o.activo = TRUE
+            LEFT JOIN ordenes o ON d.id = o.doctor_id  -- <-- Eliminar "AND o.activo = TRUE"
             LEFT JOIN (
                 SELECT orden_id, SUM(monto) as total_pagado
                 FROM pagos
@@ -158,14 +158,13 @@ const getReporteServicios = async (req, res) => {
                 COALESCE(SUM(o.total), 0) as total_facturado,
                 COALESCE(AVG(o.total), 0) as precio_promedio
             FROM servicios s
-            LEFT JOIN ordenes o ON s.id = o.servicio_id AND o.activo = TRUE
+            LEFT JOIN ordenes o ON s.id = o.servicio_id  -- <-- Eliminar "AND o.activo = TRUE"
             WHERE s.activo = TRUE
             GROUP BY s.id, s.nombre
             ORDER BY cantidad DESC
         `, { type: sequelize.QueryTypes.SELECT });
 
         res.json(servicios);
-
     } catch (error) {
         logger.error('Error en reporte de servicios:', error);
         res.status(500).json({ error: 'Error al generar reporte de servicios' });
@@ -186,7 +185,7 @@ const getReporteMorosidad = async (req, res) => {
                 COALESCE(SUM(o.total - COALESCE(p.total_pagado, 0)), 0) as deuda,
                 DATEDIFF(CURDATE(), MIN(o.fecha_limite)) as diasMora
             FROM doctores d
-            JOIN ordenes o ON d.id = o.doctor_id AND o.activo = TRUE
+            JOIN ordenes o ON d.id = o.doctor_id  -- <-- Eliminar "AND o.activo = TRUE"
             LEFT JOIN (
                 SELECT orden_id, SUM(monto) as total_pagado
                 FROM pagos
@@ -228,7 +227,6 @@ const getReporteMorosidad = async (req, res) => {
 // Reporte de Productividad - VERSIÓN CORREGIDA
 const getReporteProductividad = async (req, res) => {
     try {
-        // Obtener rendimiento por doctor
         const rendimiento = await sequelize.query(`
             SELECT 
                 d.nombre as doctor,
@@ -239,7 +237,7 @@ const getReporteProductividad = async (req, res) => {
                     NULLIF(COUNT(*), 0), 2
                 ) as eficiencia
             FROM doctores d
-            LEFT JOIN ordenes o ON d.id = o.doctor_id AND o.activo = TRUE
+            LEFT JOIN ordenes o ON d.id = o.doctor_id  -- <-- Eliminar "AND o.activo = TRUE"
             WHERE d.activo = TRUE
             GROUP BY d.nombre
             ORDER BY eficiencia DESC, completadas DESC

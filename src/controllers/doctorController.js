@@ -5,12 +5,12 @@ const fileService = require('../services/fileService');
 const obtenerDoctores = async (req, res) => {
     try {
         const doctores = await Doctor.findAll({
-            where: { activo: true },
+            where: { activo: true },  // ← Esto está bien, DOCTORES tiene activo
             include: [{
                 model: Orden,
                 as: 'ordenes',
                 required: false,
-                where: { activo: true },
+                // Eliminar el where: { activo: true } porque ORDENES ya no tiene activo
                 limit: 5
             }],
             order: [['nombre', 'ASC']]
@@ -30,10 +30,10 @@ const obtenerDoctorPorId = async (req, res) => {
             include: [{
                 model: Orden,
                 as: 'ordenes',
-                where: { activo: true },
+                // Eliminar el where: { activo: true }
                 required: false,
                 include: [{
-                    model: Servicio,  // <-- AGREGAR ESTO
+                    model: Servicio,
                     as: 'servicio',
                     attributes: ['id', 'nombre']
                 }]

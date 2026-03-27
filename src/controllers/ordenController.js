@@ -1,4 +1,4 @@
-const { Orden, Doctor, Servicio, Pago, sequelize } = require('../models');
+const { Orden, Doctor, Servicio, Pago, sequelize, Op  } = require('../models');
 const logger = require('../utils/logger');
 
 const obtenerOrdenes = async (req, res) => {

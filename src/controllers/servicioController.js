@@ -6,12 +6,12 @@ const fileService = require('../services/fileService'); // <-- IMPORTAR
 const obtenerServicios = async (req, res) => {
     try {
         const servicios = await Servicio.findAll({
-            where: { activo: true },
+            where: { activo: true },  // ← SERVICIOS tiene activo
             include: [{
                 model: Orden,
                 as: 'ordenes',
                 required: false,
-                where: { activo: true },
+                // Eliminar el where: { activo: true }
                 limit: 5
             }],
             order: [['nombre', 'ASC']]
@@ -23,7 +23,6 @@ const obtenerServicios = async (req, res) => {
         res.status(500).json({ error: 'Error al obtener servicios' });
     }
 };
-
 const obtenerServicioPorId = async (req, res) => {
     try {
         const { id } = req.params;
