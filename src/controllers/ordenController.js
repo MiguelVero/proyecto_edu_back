@@ -139,10 +139,12 @@ const eliminarOrden = async (req, res) => {
 
 const obtenerEstadisticas = async (req, res) => {
     try {
+        // Contar órdenes activas (pendientes)
         const ordenesActivas = await Orden.count({
             where: { estado: 'pendiente' }
         });
         
+        // Contar órdenes vencidas
         const ordenesVencidas = await sequelize.query(`
             SELECT COUNT(*) as total FROM ordenes o
             WHERE o.estado = 'pendiente' 
@@ -150,30 +152,26 @@ const obtenerEstadisticas = async (req, res) => {
               AND (o.total - COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.orden_id = o.id), 0)) > 0
         `, { type: sequelize.QueryTypes.SELECT });
         
+        // Contar órdenes terminadas
         const ordenesTerminadas = await Orden.count({
             where: { estado: 'terminado' }
         });
         
-        const cajaHoy = await Pago.sum('monto', {
-            where: {
-                creado_en: {
-                    [Op.gte]: new Date(new Date().setHours(0, 0, 0)),
-                    [Op.lte]: new Date(new Date().setHours(23, 59, 59))
-                }
-            }
-        }) || 0;
+        // Caja del día - Usando consulta SQL directa para evitar problemas con Op
+        const cajaHoyResult = await sequelize.query(`
+            SELECT COALESCE(SUM(monto), 0) as total 
+            FROM pagos 
+            WHERE DATE(creado_en) = CURDATE()
+        `, { type: sequelize.QueryTypes.SELECT });
+        const cajaHoy = parseFloat(cajaHoyResult[0]?.total || 0);
         
-        const inicioSemana = new Date();
-        inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
-        inicioSemana.setHours(0, 0, 0);
-        
-        const cajaSemana = await Pago.sum('monto', {
-            where: {
-                creado_en: {
-                    [Op.gte]: inicioSemana
-                }
-            }
-        }) || 0;
+        // Caja de la semana (últimos 7 días)
+        const cajaSemanaResult = await sequelize.query(`
+            SELECT COALESCE(SUM(monto), 0) as total 
+            FROM pagos 
+            WHERE creado_en >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        `, { type: sequelize.QueryTypes.SELECT });
+        const cajaSemana = parseFloat(cajaSemanaResult[0]?.total || 0);
         
         res.json({
             ordenes_activas: ordenesActivas,
@@ -184,7 +182,11 @@ const obtenerEstadisticas = async (req, res) => {
         });
     } catch (error) {
         logger.error('Error obteniendo estadísticas:', error);
-        res.status(500).json({ error: 'Error al obtener estadísticas' });
+        // Devolver un error más descriptivo para debugging
+        res.status(500).json({ 
+            error: 'Error al obtener estadísticas',
+            details: error.message 
+        });
     }
 };
 
