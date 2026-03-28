@@ -13,7 +13,7 @@ const obtenerOrdenes = async (req, res) => {
                 { 
                     model: Servicio, 
                     as: 'servicio',
-                    attributes: ['id', 'nombre']
+                    attributes: ['id', 'nombre', 'imagen_url']
                 },
                 { 
                     model: Pago, 
@@ -205,7 +205,7 @@ const obtenerOrdenPorId = async (req, res) => {
                 { 
                     model: Servicio, 
                     as: 'servicio',
-                    attributes: ['id', 'nombre']
+                    attributes: ['id', 'nombre', 'imagen_url']
                 },
                 { 
                     model: Pago, 
