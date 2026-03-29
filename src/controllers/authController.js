@@ -33,11 +33,10 @@ const login = async (req, res) => {
         const valida = await usuario.validarContrasena(contrasena);
 
         if (!valida) {
-            // Incrementar intentos fallidos
             usuario.intentos_fallidos += 1;
             
             if (usuario.intentos_fallidos >= 5) {
-                usuario.bloqueado_hasta = new Date(Date.now() + 30 * 60000); // 30 minutos
+                usuario.bloqueado_hasta = new Date(Date.now() + 30 * 60000);
             }
             
             await usuario.save();
@@ -84,11 +83,13 @@ const login = async (req, res) => {
 
 const verificarToken = async (req, res) => {
     try {
+        // Si llegó aquí, el middleware de autenticación ya verificó el token
         res.json({ 
             valido: true, 
             usuario: req.usuario.toJSON() 
         });
     } catch (error) {
+        logger.error('Error verificando token:', error);
         res.status(401).json({ 
             valido: false, 
             error: 'Token inválido' 

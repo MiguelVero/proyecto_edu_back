@@ -5,13 +5,33 @@ const logger = require('../utils/logger');
 
 const autenticar = async (req, res, next) => {
     try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const authHeader = req.header('Authorization');
         
-        if (!token) {
-            throw new Error();
+        if (!authHeader) {
+            logger.warn('Intento de acceso sin token');
+            return res.status(401).json({ 
+                error: 'Token no proporcionado' 
+            });
         }
 
-        const decoded = jwt.verify(token, config.jwtSecret);
+        const token = authHeader.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ 
+                error: 'Token no proporcionado' 
+            });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, config.jwtSecret);
+        } catch (jwtError) {
+            logger.warn('Token inválido o expirado');
+            return res.status(401).json({ 
+                error: 'Token inválido o expirado' 
+            });
+        }
+
         const usuario = await Usuario.findOne({ 
             where: { 
                 id: decoded.id, 
@@ -20,16 +40,19 @@ const autenticar = async (req, res, next) => {
         });
 
         if (!usuario) {
-            throw new Error();
+            logger.warn(`Usuario no encontrado o inactivo: ${decoded.id}`);
+            return res.status(401).json({ 
+                error: 'Usuario no encontrado o inactivo' 
+            });
         }
 
         req.usuario = usuario;
         req.token = token;
         next();
     } catch (error) {
-        logger.warn('Intento de acceso no autorizado');
+        logger.error('Error en autenticación:', error);
         res.status(401).json({ 
-            error: 'Por favor, autentíquese para acceder a este recurso' 
+            error: 'Error de autenticación' 
         });
     }
 };
