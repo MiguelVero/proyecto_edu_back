@@ -29,19 +29,19 @@ app.set('trust proxy', 1);
 // Configuración CORS mejorada
 const corsOptions = {
     origin: function (origin, callback) {
-        // Permitir cualquier origen en desarrollo
         const allowedOrigins = [
             'http://localhost:4200',
             'http://127.0.0.1:4200',
+            'https://proyectoedufrontend-production.up.railway.app',
             config.frontendUrl
         ];
         
-        // Permitir requests sin origen (como mobile apps o postman)
         if (!origin) return callback(null, true);
         
-        if (config.nodeEnv === 'development' || allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
             callback(null, true);
         } else {
+            console.log('❌ Origen no permitido:', origin);
             callback(new Error('No permitido por CORS'));
         }
     },
@@ -51,7 +51,6 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Range', 'X-Content-Range']
 };
-
 // APLICAR CORS PRIMERO
 app.use(cors(corsOptions));
 
