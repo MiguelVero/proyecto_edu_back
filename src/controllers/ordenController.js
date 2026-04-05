@@ -1,6 +1,6 @@
 const { Orden, Doctor, Servicio, Pago, sequelize, Op  } = require('../models');
 const logger = require('../utils/logger');
-
+const fileService = require('../services/fileService'); // <-- IMPORTANTE: AGREGAR ESTA LÍNEA
 const obtenerOrdenes = async (req, res) => {
     try {
         const ordenes = await Orden.findAll({
@@ -276,22 +276,34 @@ const obtenerFechaServidor = (req, res) => {
 };
 const actualizarImagenReferencia = async (req, res) => {
     try {
+          console.log('📸 Iniciando actualización de imagen para orden ID:', req.params.id);
+        console.log('📁 Archivo recibido:', req.file);
         const { id } = req.params;
         const orden = await Orden.findByPk(id);
 
         if (!orden) {
+              console.log('❌ Orden no encontrada:', id);
             return res.status(404).json({ error: 'Orden no encontrada' });
         }
 
-        // Procesar imagen si se subió una nueva
-        if (req.file) {
-            // Eliminar imagen anterior si existe
-            if (orden.imagen_referencia_url) {
-                await fileService.deleteFile(orden.imagen_referencia_url);
-            }
-            orden.imagen_referencia_url = await fileService.saveFile(req.file, 'ordenes');
+        // Verificar si se subió un archivo
+        if (!req.file) {
+            console.log('❌ No se recibió archivo');
+            return res.status(400).json({ error: 'No se proporcionó ninguna imagen' });
         }
 
+         console.log('💾 Guardando archivo...');
+        // Procesar imagen
+        const imagen_url = await fileService.saveFile(req.file, 'ordenes');
+        console.log('✅ Archivo guardado en:', imagen_url);
+        
+        // Eliminar imagen anterior si existe
+        if (orden.imagen_referencia_url) {
+            console.log('🗑️ Eliminando imagen anterior:', orden.imagen_referencia_url);
+            await fileService.deleteFile(orden.imagen_referencia_url);
+        }
+        
+        orden.imagen_referencia_url = imagen_url;
         await orden.save();
 
         logger.info(`Imagen de referencia actualizada para orden ID: ${id}`);
@@ -302,10 +314,12 @@ const actualizarImagenReferencia = async (req, res) => {
         });
 
     } catch (error) {
+         console.error('❌ Error detallado:', error);
         logger.error('Error actualizando imagen de referencia:', error);
-        res.status(500).json({ error: 'Error al actualizar la imagen' });
+        res.status(500).json({ error: 'Error al actualizar la imagen: ' + error.message });
     }
 };
+
 module.exports = {
     obtenerOrdenes,
     obtenerOrdenPorId,

@@ -6,6 +6,8 @@ class FileService {
     constructor() {
         this.uploadDir = path.join(__dirname, '../../', config.uploadDir);
         this.doctoresDir = path.join(this.uploadDir, 'doctores');
+         this.serviciosDir = path.join(this.uploadDir, 'servicios');
+        this.ordenesDir = path.join(this.uploadDir, 'ordenes');  // <-- NUEVO
         this.tempDir = path.join(this.uploadDir, 'temp');
         
         // Asegurar que los directorios existen
@@ -14,6 +16,8 @@ class FileService {
 
     ensureDirectories() {
         fs.ensureDirSync(this.doctoresDir);
+            fs.ensureDirSync(this.serviciosDir);
+           fs.ensureDirSync(this.ordenesDir);
         fs.ensureDirSync(this.tempDir);
     }
 
