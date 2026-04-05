@@ -53,8 +53,9 @@ router.get('/server-time', autenticar, obtenerFechaServidor);
 // LUEGO las rutas con parámetros
 router.get('/', autenticar, obtenerOrdenes);
 router.get('/:id', autenticar, obtenerOrdenPorId);
-router.post('/', autenticar, validarOrden, crearOrden);
-router.put('/:id', autenticar, actualizarOrden);
+// Rutas POST y PUT con multer para manejar imágenes
+router.post('/', autenticar, upload.single('imagen_referencia'), validarOrden, crearOrden);
+router.put('/:id', autenticar, upload.single('imagen_referencia'), actualizarOrden);
 router.delete('/:id', autenticar, autorizar('admin'), eliminarOrden);
 
 // NUEVA RUTA: Subir imagen de referencia para una orden (con autenticación)

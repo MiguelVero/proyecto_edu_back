@@ -35,6 +35,12 @@ const crearOrden = async (req, res) => {
     const transaction = await sequelize.transaction();
     
     try {
+        // Procesar imagen de referencia si existe
+        let imagen_referencia_url = null;
+        if (req.file) {
+            imagen_referencia_url = await fileService.saveFile(req.file, 'ordenes');
+        }
+        
         const ordenData = {
             doctor_id: req.body.doctor_id,
             servicio_id: req.body.servicio_id,
@@ -44,7 +50,8 @@ const crearOrden = async (req, res) => {
             hora_limite: req.body.hora_limite || null,
             cliente_nombre: req.body.cliente_nombre || null,
             usuario_creo_id: req.usuario.id,
-            id_externo: `ORD-${Date.now()}`
+            id_externo: `ORD-${Date.now()}`,
+            imagen_referencia_url: imagen_referencia_url  // <-- NUEVO
         };
 
         const orden = await Orden.create(ordenData, { transaction });
@@ -84,6 +91,16 @@ const actualizarOrden = async (req, res) => {
             return res.status(404).json({ error: 'Orden no encontrada' });
         }
 
+        // Procesar imagen de referencia si se subió una nueva
+        let imagen_referencia_url = orden.imagen_referencia_url;
+        if (req.file) {
+            // Eliminar imagen anterior si existe
+            if (orden.imagen_referencia_url) {
+                await fileService.deleteFile(orden.imagen_referencia_url);
+            }
+            imagen_referencia_url = await fileService.saveFile(req.file, 'ordenes');
+        }
+
         const datosActualizados = {
             doctor_id: req.body.doctor_id,
             servicio_id: req.body.servicio_id,
@@ -91,7 +108,8 @@ const actualizarOrden = async (req, res) => {
             prioridad: req.body.prioridad,
             fecha_limite: req.body.fecha_limite || null,
             hora_limite: req.body.hora_limite || null,
-            cliente_nombre: req.body.cliente_nombre
+            cliente_nombre: req.body.cliente_nombre,
+            imagen_referencia_url: imagen_referencia_url  // <-- NUEVO
         };
 
         await orden.update(datosActualizados);
