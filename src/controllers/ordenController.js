@@ -49,6 +49,7 @@ const crearOrden = async (req, res) => {
             fecha_limite: req.body.fecha_limite || null,
             hora_limite: req.body.hora_limite || null,
             cliente_nombre: req.body.cliente_nombre || null,
+              detalle_cliente: req.body.detalle_cliente || null,  // <-- NUEVO
             usuario_creo_id: req.usuario.id,
             id_externo: `ORD-${Date.now()}`,
             imagen_referencia_url: imagen_referencia_url  // <-- NUEVO
@@ -109,6 +110,7 @@ const actualizarOrden = async (req, res) => {
             fecha_limite: req.body.fecha_limite || null,
             hora_limite: req.body.hora_limite || null,
             cliente_nombre: req.body.cliente_nombre,
+             detalle_cliente: req.body.detalle_cliente || null,  // <-- NUEVO
             imagen_referencia_url: imagen_referencia_url  // <-- NUEVO
         };
 
