@@ -274,7 +274,38 @@ const obtenerFechaServidor = (req, res) => {
     const dia = String(ahora.getDate()).padStart(2, '0');
     res.json({ fecha: `${anio}-${mes}-${dia}` });
 };
+const actualizarImagenReferencia = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const orden = await Orden.findByPk(id);
 
+        if (!orden) {
+            return res.status(404).json({ error: 'Orden no encontrada' });
+        }
+
+        // Procesar imagen si se subió una nueva
+        if (req.file) {
+            // Eliminar imagen anterior si existe
+            if (orden.imagen_referencia_url) {
+                await fileService.deleteFile(orden.imagen_referencia_url);
+            }
+            orden.imagen_referencia_url = await fileService.saveFile(req.file, 'ordenes');
+        }
+
+        await orden.save();
+
+        logger.info(`Imagen de referencia actualizada para orden ID: ${id}`);
+
+        res.json({
+            mensaje: 'Imagen de referencia actualizada correctamente',
+            imagen_url: orden.imagen_referencia_url
+        });
+
+    } catch (error) {
+        logger.error('Error actualizando imagen de referencia:', error);
+        res.status(500).json({ error: 'Error al actualizar la imagen' });
+    }
+};
 module.exports = {
     obtenerOrdenes,
     obtenerOrdenPorId,
@@ -283,5 +314,6 @@ module.exports = {
     eliminarOrden,
     obtenerEstadisticas,
     obtenerIngresosMensuales,
-    obtenerFechaServidor
+    obtenerFechaServidor,
+    actualizarImagenReferencia
 };

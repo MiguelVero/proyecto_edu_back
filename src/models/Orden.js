@@ -67,6 +67,10 @@ const Orden = sequelize.define('Orden', {
     },
     cliente_nombre: {
         type: DataTypes.TEXT
+    },
+     imagen_referencia_url: {
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     tableName: 'ordenes',
