@@ -123,6 +123,45 @@ app.get('/api/ping', (req, res) => {
     });
 });
 
+
+// 🔥 RUTA DE DEBUG - MUCHO ANTES del manejador 404
+app.get('/debug/directories', async (req, res) => {
+    const fs = require('fs-extra');
+    const path = require('path');
+    const uploadsPath = path.join(__dirname, '../uploads');
+    
+    const listarDirectorio = async (dir) => {
+        if (!await fs.pathExists(dir)) return null;
+        const items = await fs.readdir(dir);
+        const resultado = [];
+        
+        for (const item of items) {
+            const itemPath = path.join(dir, item);
+            const stat = await fs.stat(itemPath);
+            resultado.push({
+                nombre: item,
+                esDirectorio: stat.isDirectory(),
+                ruta: itemPath,
+                tamaño: stat.isFile() ? stat.size : null
+            });
+        }
+        return resultado;
+    };
+    
+    const exists = await fs.pathExists(uploadsPath);
+    const contenido = exists ? await listarDirectorio(uploadsPath) : [];
+    
+    res.json({
+        uploadsPath,
+        exists,
+        contenido,
+        mensaje: 'Si ves doctores/, servicios/, ordenes/ y temp/, está funcionando correctamente'
+    });
+});
+
+
+
+
 // Rutas públicas de autenticación
 app.use('/api/auth', authRoutes);
 
@@ -155,37 +194,5 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
 });
-// En app.js, agregar temporalmente para debug
-app.get('/debug/directories', async (req, res) => {
-    const fs = require('fs-extra');
-    const path = require('path');
-    const uploadsPath = path.join(__dirname, '../uploads');
-    
-    const listarDirectorio = async (dir, nivel = 0) => {
-        if (!await fs.pathExists(dir)) return null;
-        const items = await fs.readdir(dir);
-        const resultado = [];
-        
-        for (const item of items) {
-            const itemPath = path.join(dir, item);
-            const stat = await fs.stat(itemPath);
-            resultado.push({
-                nombre: item,
-                esDirectorio: stat.isDirectory(),
-                ruta: itemPath
-            });
-        }
-        return resultado;
-    };
-    
-    const exists = await fs.pathExists(uploadsPath);
-    const contenido = exists ? await listarDirectorio(uploadsPath) : [];
-    
-    res.json({
-        uploadsPath,
-        exists,
-        contenido,
-        mensaje: 'Si ves doctores/, servicios/, ordenes/ y temp/, está funcionando correctamente'
-    });
-});
+
 module.exports = app;
