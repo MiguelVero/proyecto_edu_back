@@ -4,6 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs-extra');
+const config = require('../config/config');
 const { 
     obtenerOrdenes, 
     obtenerOrdenPorId,
