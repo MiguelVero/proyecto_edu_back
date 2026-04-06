@@ -38,9 +38,9 @@ module.exports = {
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
     uploadDir: process.env.UPLOAD_DIR || 'uploads',
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024,
-    rateLimit: {
-        windowMs: 15 * 60 * 1000,
-        max: 100
-    }
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 15 * 1024 * 1024, // 15MB
+        rateLimit: {
+            windowMs: 15 * 60 * 1000,
+            max: 100
+        }
 };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const config = require('../config/config'); // <-- IMPORTAR CONFIG
+const config = require('../config/config');
 const { 
     obtenerDoctores, 
     obtenerDoctorPorId, 
@@ -17,14 +17,11 @@ const { body } = require('express-validator');
 const { validarCampos } = require('../middleware/validator');
 
 // Configuración de multer para subir imágenes
-// Configuración de multer para subir imágenes
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Usar directorio temporal
         cb(null, path.join(__dirname, '../../uploads/temp'));
     },
     filename: (req, file, cb) => {
-        // Mantener nombre original pero con timestamp para evitar conflictos
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, `temp-${uniqueSuffix}${path.extname(file.originalname)}`);
     }
@@ -32,16 +29,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage,
-    limits: { fileSize: config.maxFileSize },
+    limits: { fileSize: config.maxFileSize }, // Usar config (15MB)
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|avif|webp/;
+        const allowedTypes = /jpeg|jpg|png|gif|avif|webp|heic|heif/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
         
         if (mimetype && extname) {
             return cb(null, true);
         } else {
-            cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, avif, webp)'));
+            cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, avif, webp, heic, heif)'));
         }
     }
 });

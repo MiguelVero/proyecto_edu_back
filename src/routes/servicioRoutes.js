@@ -27,16 +27,17 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage,
-    limits: { fileSize: config.maxFileSize },
+    limits: { fileSize: config.maxFileSize }, // Usar config (15MB)
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|avif|webp/;
+        // Soporte para formatos comunes y HEIC/HEIF (iPhone)
+        const allowedTypes = /jpeg|jpg|png|gif|avif|webp|heic|heif/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
         
         if (mimetype && extname) {
             return cb(null, true);
         } else {
-            cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, avif, webp)'));
+            cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, avif, webp, heic, heif)'));
         }
     }
 });
@@ -48,14 +49,14 @@ router.get('/:id', autenticar, obtenerServicioPorId);
 router.post('/', 
     autenticar, 
     autorizar('admin', 'supervisor'),
-    upload.single('imagen'),  // <-- AGREGAR
+    upload.single('imagen'),
     validarServicio,
     crearServicio
 );
 router.put('/:id', 
     autenticar, 
     autorizar('admin', 'supervisor'),
-    upload.single('imagen'),  // <-- AGREGAR
+    upload.single('imagen'),
     validarServicio,
     actualizarServicio
 );

@@ -87,8 +87,9 @@ app.use('/api/', limiter);
 
 // Otros middlewares
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Aumentar el límite para requests grandes (para imágenes grandes)
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
 // Archivos estáticos

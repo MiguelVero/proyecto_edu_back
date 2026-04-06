@@ -31,11 +31,12 @@ const storage = multer.diskStorage({
     }
 });
 
+// Cambia el límite de 5MB a 15MB
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 },
+     limits: { fileSize: config.maxFileSize }, // Usar config
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|webp|avif/;
+        const allowedTypes = /jpeg|jpg|png|gif|webp|avif|heic|heif/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
         if (mimetype && extname) {
