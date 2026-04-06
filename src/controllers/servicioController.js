@@ -41,7 +41,7 @@ const obtenerServicioPorId = async (req, res) => {
 
 const crearServicio = async (req, res) => {
     try {
-        const { nombre, descripcion, precio_referencial, categoria } = req.body;
+        const { nombre, precio_referencial } = req.body;
 
         // Verificar si ya existe
         const existe = await Servicio.findOne({ 
@@ -140,15 +140,24 @@ const eliminarServicio = async (req, res) => {
             return res.status(404).json({ error: 'Servicio no encontrado' });
         }
 
+        // Verificar si tiene órdenes asociadas
+        const ordenesAsociadas = await Orden.count({ where: { servicio_id: id } });
+        
+        if (ordenesAsociadas > 0) {
+            return res.status(400).json({ 
+                error: `No se puede eliminar el servicio porque tiene ${ordenesAsociadas} órdenes asociadas. Primero elimine o reasigne esas órdenes.` 
+            });
+        }
+
         // Eliminar imagen si existe
         if (servicio.imagen_url) {
             await fileService.deleteFile(servicio.imagen_url);
         }
 
-        // Soft delete
-        await servicio.update({ activo: false });
+        // Eliminar físicamente de la base de datos
+        await servicio.destroy();
 
-        logger.info(`Servicio eliminado - ID: ${id}`);
+        logger.info(`Servicio eliminado físicamente - ID: ${id}`);
 
         res.json({
             mensaje: 'Servicio eliminado correctamente'

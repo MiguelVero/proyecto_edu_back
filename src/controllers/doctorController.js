@@ -166,15 +166,24 @@ const eliminarDoctor = async (req, res) => {
             return res.status(404).json({ error: 'Doctor no encontrado' });
         }
 
+        // Verificar si tiene órdenes asociadas
+        const ordenesAsociadas = await Orden.count({ where: { doctor_id: id } });
+        
+        if (ordenesAsociadas > 0) {
+            return res.status(400).json({ 
+                error: `No se puede eliminar el doctor porque tiene ${ordenesAsociadas} órdenes asociadas. Primero elimine o reasigne esas órdenes.` 
+            });
+        }
+
         // Eliminar imagen si existe
         if (doctor.logo_url) {
             await fileService.deleteFile(doctor.logo_url);
         }
 
-        // Soft delete
-        await doctor.update({ activo: false });
+        // Eliminar físicamente de la base de datos
+        await doctor.destroy();
 
-        logger.info(`Doctor eliminado - ID: ${id}`);
+        logger.info(`Doctor eliminado físicamente - ID: ${id}`);
 
         res.json({
             mensaje: 'Doctor eliminado correctamente'
