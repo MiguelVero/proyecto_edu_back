@@ -26,12 +26,12 @@ module.exports = {
         user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
         password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
         dialect: 'mysql',
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000
-        }
+       pool: {
+        max: 3,      // Reducir de 5 a 3
+        min: 0,
+        acquire: 10000,
+        idle: 5000
+}
     },
     
     jwtSecret: process.env.JWT_SECRET || 'dev_secret_key',

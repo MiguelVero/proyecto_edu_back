@@ -3,6 +3,7 @@ const app = require('./src/app');
 const config = require('./src/config/config');
 const { sequelize } = require('./src/models');
 const logger = require('./src/utils/logger');
+const cron = require('node-cron');  // ✅ Movido arriba con los otros requires
 
 const PORT = config.port || 3000;
 
@@ -11,7 +12,6 @@ console.log(`🕐 Zona horaria configurada: ${process.env.TZ}`);
 console.log(`🕐 Hora actual del servidor: ${new Date().toLocaleString('es-PE')}`);
 console.log(`📝 Entorno: ${config.nodeEnv}`);
 console.log(`🔧 Configuración DB: ${config.db.host}:${config.db.port}/${config.db.name}`);
-
 
 // Verificar conexión a la base de datos
 async function initializeDatabase() {
@@ -32,10 +32,23 @@ async function initializeDatabase() {
     }
 }
 
-
 // Iniciar servidor
 async function startServer() {
-    await initializeDatabase();
+    await initializeDatabase();  // ✅ Primero conectamos DB
+    
+    // ✅ CRON JOB - Ahora sí, después de que la DB está conectada
+    cron.schedule('0 2 * * *', async () => {
+        try {
+            console.log('🕑 Ejecutando limpieza de logs (2:00 AM hora Perú)...');
+            // Eliminar logs de más de 30 días
+            const [result] = await sequelize.query(
+                `DELETE FROM logs_actividad WHERE creado_en < DATE_SUB(NOW(), INTERVAL 30 DAY)`
+            );
+            console.log(`🗑️ Logs limpiados: ${result.affectedRows} registros eliminados`);
+        } catch (error) {
+            console.error('❌ Error limpiando logs:', error.message);
+        }
+    });
     
     const server = app.listen(PORT, () => {
         console.log(`
